@@ -4,6 +4,7 @@ import (
 	"crypto/md5"
 	"fmt"
 	"hash/crc32"
+	"math/rand"
 	"strconv"
 	"sync/atomic"
 	"testing"
@@ -130,4 +131,23 @@ func TestSigner(t *testing.T) {
 		t.Errorf("not enough hash-func calls")
 	}
 
+}
+
+func Benchmark(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		rng := rand.New(rand.NewSource(int64(i)))
+		Advertise([]job{
+			job(func(in, out chan interface{}) {
+				for i := 0; i < 64; i++ {
+					out <- rng.Int()
+				}
+			}),
+			job(GetProfile),
+			job(GetGroup),
+			job(ConcatProfiles),
+			job(func(in, out chan interface{}) {
+				fmt.Println(<-in)
+			}),
+		}...)
+	}
 }
